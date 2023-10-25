@@ -12,8 +12,13 @@ stock = Stock('AMD', 'SMART', 'USD')
 
 
 bars = ib.reqHistoricalData(
-    stock, endDateTime='', durationStr='60 D',
-    barSizeSetting='2 mins', whatToShow='TRADES', useRTH=True)
+    stock, endDateTime='', durationStr='2 D',
+    barSizeSetting='2 mins',
+    whatToShow='TRADES',
+    useRTH=True,
+    timeout=0,
+    keepUpToDate=False)
+
 
 activeOrder = None
 next_bar = 195
@@ -41,6 +46,9 @@ for bar in bars[next_bar:]:
     delta = round(p_close - p_open, 2)
     delta_20_200 = sma20 - sma200
 
+
+    # All the parametros releated a strengh were setted looking a 100 USD price
+    # is important make relative those values by percentage
     acceptable_sma20_price_distance = 0.35
     acceptable_sma20_sm200_distance = 0.35
     acceptable_delta = 0.30
@@ -52,6 +60,7 @@ for bar in bars[next_bar:]:
     #
 
     stopLoss = bar.high if delta < 0 else bar.low
+    # stopLoss = p_close + 0.5 if delta < 0 else p_close - 0.5
     takeProfit = p_close - 1.1 if delta < 0 else p_close + 1.1
     ticksToLose = abs(p_close - stopLoss)
     ticksToWin = abs(p_close - takeProfit)
@@ -64,7 +73,7 @@ for bar in bars[next_bar:]:
         orderType = 'Sell' if delta < 0 else 'Buy'
         order = {
             "orderType": orderType,
-            "shares": 600,
+            "shares": 900,
             "price": p_close,
             "stopLoss": stopLoss,
             "takeProfit": takeProfit,
@@ -103,3 +112,4 @@ print('NET: '+ str(profits - loses))
 print("Loses Count: " + str(losesCount))
 print("Profits Count: " + str(profitsCount))
 print('Effective: ' + str(profitsCount / (profitsCount + losesCount)))
+print("net: " + str(profits - loses) + " loses: " + str(losesCount) + " profits " + str(profitsCount))
