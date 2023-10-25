@@ -12,13 +12,12 @@ stock = Stock('AMD', 'SMART', 'USD')
 
 
 bars = ib.reqHistoricalData(
-    stock, endDateTime='', durationStr='2 D',
+    stock, endDateTime='', durationStr='18 D',
     barSizeSetting='2 mins',
     whatToShow='TRADES',
     useRTH=True,
     timeout=0,
     keepUpToDate=False)
-
 
 activeOrder = None
 next_bar = 195
@@ -40,10 +39,7 @@ for bar in bars[next_bar:]:
         sma200 += x.close
     sma200 = round(sma200 / len(target), 2)
 
-    p_open = bar.open
-    p_close = bar.close
-    volume = bar.volume
-    delta = round(p_close - p_open, 2)
+    delta = round(bar.close - bar.open, 2)
     delta_20_200 = sma20 - sma200
 
 
@@ -52,7 +48,7 @@ for bar in bars[next_bar:]:
     acceptable_sma20_price_distance = 0.35
     acceptable_sma20_sm200_distance = 0.35
     acceptable_delta = 0.30
-    acceptable_volumen = 200000
+    acceptable_volume = 200000
     # breakpoint()
 
     # TODO
@@ -60,13 +56,13 @@ for bar in bars[next_bar:]:
     #
 
     stopLoss = bar.high if delta < 0 else bar.low
-    # stopLoss = p_close + 0.5 if delta < 0 else p_close - 0.5
-    takeProfit = p_close - 1.1 if delta < 0 else p_close + 1.1
-    ticksToLose = abs(p_close - stopLoss)
-    ticksToWin = abs(p_close - takeProfit)
+    # stopLoss = bar.close + 0.5 if delta < 0 else bar.close - 0.5
+    takeProfit = bar.close - 1.1 if delta < 0 else bar.close + 1.1
+    ticksToLose = abs(bar.close - stopLoss)
+    ticksToWin = abs(bar.close - takeProfit)
     if (abs(delta) >= acceptable_delta and
-        abs(p_open - sma20) <= acceptable_sma20_price_distance and
-        volume >= acceptable_volumen and ticksToLose <= 0.5 and
+        abs(bar.open - sma20) <= acceptable_sma20_price_distance and
+        bar.volume >= acceptable_volume and ticksToLose <= 0.5 and
         abs(delta_20_200) <= acceptable_sma20_sm200_distance and
         activeOrder == None):
 
@@ -74,14 +70,14 @@ for bar in bars[next_bar:]:
         order = {
             "orderType": orderType,
             "shares": 900,
-            "price": p_close,
+            "price": bar.close,
             "stopLoss": stopLoss,
             "takeProfit": takeProfit,
             "ticksToLose": ticksToLose,
             "ticksToWin": ticksToWin
         }
         activeOrder = order
-        print("TRIGGER ORDER | date " + str(bar.date) + " p_open " + str(p_open) + " p_close " + str(p_close) + " delta " + str(delta) + " sma20 " + str(sma20))
+        print("TRIGGER ORDER | date " + str(bar.date) + " bar.open " + str(bar.open) + " bar.close " + str(bar.close) + " delta " + str(delta) + " sma20 " + str(sma20))
         print(order)
     elif activeOrder != None:
         if activeOrder['orderType'] == 'Sell':
@@ -103,7 +99,6 @@ for bar in bars[next_bar:]:
                 profitsCount += 1
                 activeOrder = None
 
-    # print("date " + str(bar.date) + " | "+ str(next_bar) + " close " + str(bar.close) + " volume " + str(bar.volume))
     next_bar += 1
 
 print("Loses: " + str(loses))
@@ -111,5 +106,5 @@ print("Profits: " + str(profits))
 print('NET: '+ str(profits - loses))
 print("Loses Count: " + str(losesCount))
 print("Profits Count: " + str(profitsCount))
-print('Effective: ' + str(profitsCount / (profitsCount + losesCount)))
+# print('Effective: ' + str(profitsCount / (profitsCount + losesCount)))
 print("net: " + str(profits - loses) + " loses: " + str(losesCount) + " profits " + str(profitsCount))
