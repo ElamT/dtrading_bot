@@ -12,7 +12,7 @@ stock = Stock('AMD', 'SMART', 'USD')
 
 
 bars = ib.reqHistoricalData(
-    stock, endDateTime='', durationStr='18 D',
+    stock, endDateTime='20231031 16:00:00', durationStr='1 M',
     barSizeSetting='2 mins',
     whatToShow='TRADES',
     useRTH=True,
@@ -25,6 +25,7 @@ profits = 0
 loses = 0
 profitsCount = 0
 losesCount = 0
+
 for bar in bars[next_bar:]:
     sma20  = 0
     target = bars[next_bar - 19: next_bar + 1]
@@ -70,6 +71,7 @@ for bar in bars[next_bar:]:
         order = {
             "orderType": orderType,
             "shares": 900,
+            'date': str(bar.date),
             "price": bar.close,
             "stopLoss": stopLoss,
             "takeProfit": takeProfit,
@@ -78,26 +80,35 @@ for bar in bars[next_bar:]:
         }
         activeOrder = order
         print("TRIGGER ORDER | date " + str(bar.date) + " bar.open " + str(bar.open) + " bar.close " + str(bar.close) + " delta " + str(delta) + " sma20 " + str(sma20))
-        print(order)
     elif activeOrder != None:
         if activeOrder['orderType'] == 'Sell':
             if bar.high >= activeOrder['stopLoss']:
                 loses += activeOrder['shares'] * activeOrder['ticksToLose']
                 losesCount += 1
+                activeOrder['status'] = 'LOSE'
+                activeOrder['NET'] = profits - loses
                 activeOrder = None
             elif bar.low <= activeOrder['takeProfit']:
                 profitsCount += 1
                 profits += activeOrder['shares'] * activeOrder['ticksToWin']
+                activeOrder['status'] = 'WIN'
+                activeOrder['NET'] = profits - loses
                 activeOrder = None
         else:
             if bar.low <= activeOrder['stopLoss']:
                 loses += activeOrder['shares'] * activeOrder['ticksToLose']
                 losesCount += 1
+                activeOrder['status'] = 'LOSE'
+                activeOrder['NET'] = profits - loses
                 activeOrder = None
             elif bar.high >= activeOrder['takeProfit']:
                 profits += activeOrder['shares'] * activeOrder['ticksToWin']
                 profitsCount += 1
+                activeOrder['status'] = 'WIN'
+                activeOrder['NET'] = profits - loses
                 activeOrder = None
+        if activeOrder == None:
+            print(order)
 
     next_bar += 1
 
