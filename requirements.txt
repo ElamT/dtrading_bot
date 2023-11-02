@@ -1,3 +1,4 @@
 ib_insync
 bs4
 tzlocal >= 3.0
+python-dateutil

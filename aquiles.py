@@ -5,7 +5,7 @@ class AquilesBot(IB):
     def __init__(self, stock):
         super(AquilesBot, self).__init__()
         self.stock = Stock('AMD', 'SMART', 'USD')
-        self.connect('127.0.0.1', 7497, clientId=2)
+        self.connect('127.0.0.1', 4002, clientId=1)
 
     def init_data(self):
         self.bars = self.reqHistoricalData(
@@ -103,6 +103,6 @@ class AquilesBot(IB):
         }
 
 
-aquiles = AquilesBot('AMD')
-aquiles.init_data()
-aquiles.run()
+# aquiles = AquilesBot('AMD')
+# aquiles.init_data()
+# aquiles.run()
