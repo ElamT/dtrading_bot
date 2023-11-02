@@ -5,9 +5,9 @@ class AquilesBot(IB):
     def __init__(self, stock):
         super(AquilesBot, self).__init__()
         self.stock = Stock('AMD', 'SMART', 'USD')
-        self.connect('127.0.0.1', 4002, clientId=1)
 
     def init_data(self):
+        self.connect('127.0.0.1', 4002, clientId=1)
         self.bars = self.reqHistoricalData(
             self.stock,
             endDateTime='',
