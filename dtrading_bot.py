@@ -6,7 +6,7 @@ ib = IB()
 # ib.connect('127.0.0.1', 7497, clientId=1)
 
 # us this for TWS (Workstation)
-ib.connect('127.0.0.1', 7497, clientId=1)
+ib.connect('127.0.0.1', 4002, clientId=1)
 
 stock = Stock('AMD', 'SMART', 'USD')
 
@@ -42,6 +42,7 @@ for bar in bars[next_bar:]:
 
     delta = round(bar.close - bar.open, 2)
     delta_20_200 = sma20 - sma200
+    # print('date: '+ str(bar.date) +' sma20 ' + str(sma20) + ' sma200 '+ str(sma200))
 
 
     # All the parametros releated a strengh were setted looking a 100 USD price
@@ -79,7 +80,8 @@ for bar in bars[next_bar:]:
             "ticksToWin": ticksToWin
         }
         activeOrder = order
-        print("TRIGGER ORDER | date " + str(bar.date) + " bar.open " + str(bar.open) + " bar.close " + str(bar.close) + " delta " + str(delta) + " sma20 " + str(sma20))
+        # print("TRIGGER ORDER | date " + str(bar.date) + " bar.open " + str(bar.open) + " bar.close " + str(bar.close) + " delta " + str(delta) + " sma20 " + str(sma20))
+
     elif activeOrder != None:
         if activeOrder['orderType'] == 'Sell':
             if bar.high >= activeOrder['stopLoss']:

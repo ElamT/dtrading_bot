@@ -1,11 +1,11 @@
 from ib_insync import *
 
 ib = IB()
-ib.connect('127.0.0.1', 7497, clientId=1)
+ib.connect('127.0.0.1', 4002, clientId=1)
 stock = Stock('AMD', 'SMART', 'USD')
 
 bars = ib.reqHistoricalData(
-    stock, endDateTime='', durationStr='3 D',
+    stock, endDateTime='', durationStr='2 D',
     barSizeSetting='2 mins', whatToShow='TRADES',
     useRTH=True, timeout=0, keepUpToDate=True)
 
