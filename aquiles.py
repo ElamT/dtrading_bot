@@ -1,10 +1,16 @@
 from ib_insync import *
+from back_testing import BackTesting
 
-class AquilesBot(IB):
+class AquilesBot(IB, BackTesting):
     """docstring for AquilesBot"""
     def __init__(self, stock):
         super(AquilesBot, self).__init__()
-        self.stock = Stock('AMD', 'SMART', 'USD')
+        self.stock = Stock(stock, 'SMART', 'USD')
+        self.active_order = None
+        self.wins = 0
+        self.loses = 0
+        self.amount_win = 0
+        self.amount_lose = 0
 
     def init_data(self):
         self.connect('127.0.0.1', 4002, clientId=1)
@@ -18,16 +24,18 @@ class AquilesBot(IB):
             timeout=0,
             keepUpToDate=True
         )
-        self.current_bar = self.bars[-2]
-        self.current_bar_index = self.bars.index(self.current_bar)
-        self.bar_context = self.build_bar_context()
         self.bars.updateEvent += self.on_bar_update
-        self.echo_currents()
+        self.set_currents()
+
+    def set_currents(self, index=-2):
+        self.current_bar = self.bars[index]
+        # self.current_bar_index = self.bars.index(self.current_bar)
+        self.current_bar_index = index
+        self.bar_context = self.build_bar_context()
 
     def echo_currents(self):
-        print("Current Bar index " + str(self.current_bar_index))
-        print("Current Bar " + str(self.current_bar))
-        print('Bar Context: ' + str(self.bar_context))
+        print("Current Bar[%s] %s" %(self.current_bar_index, self.current_bar))
+        print('Bar Context: %s' %(self.bar_context))
 
     def on_bar_update(self, bars, has_new_bar):
         if has_new_bar:
@@ -38,26 +46,34 @@ class AquilesBot(IB):
 
     def calculate_sma(self, periods=''):
         index = self.current_bar_index
-        target = self.bars[index - periods: index + 1]
-        sma = 0
-        for x in target:
-            sma += x.close
-        return round(sma / len(target), 2)
+        if index >= periods:
+            target = self.bars[index - periods : index + 1]
+            sma = 0
+            for x in target:
+                sma += x.close
+            return round(sma / len(target), 2)
+        else:
+            raise Exception('Index is less than len of bars')
 
     def process_bar(self):
-        if (self.current_bar_index >= 195 and self.meet_conditions()):
-            print("TRIGGER ORDER")
-            orders = self.bracketOrder(
-                bar_context['order_type'],
-                bar_context['shares'],
-                bar_context['price'],
-                bar_context['take_profit'],
-                bar_context['stop_lose']
-            )
-            for order in orders:
-                self.placeOrder(self.stock, order)
+        if (self.current_bar_index >= 195 and
+            self.active_order == None and
+            self.meet_conditions()):
+            self.active_order = self.bar_context
 
-        self.echo_currents()
+        elif self.active_order != None:
+            self.analyze_active_order()
+
+    def trigger_order():
+        orders = self.bracketOrder(
+            self.bar_context['order_type'],
+            self.bar_context['shares'],
+            self.bar_context['price'],
+            self.bar_context['take_profit'],
+            self.bar_context['stop_lose']
+        )
+        for order in orders:
+            self.placeOrder(self.stock, order)
 
     def meet_conditions(self):
         acceptable_sma20_price_distance = 0.35
@@ -69,7 +85,7 @@ class AquilesBot(IB):
         sma200 = self.bar_context['sma200']
 
         return (abs(self.bar_context['delta']) >= acceptable_delta and
-                abs(bar.open - sma20) <= acceptable_sma20_price_distance and
+                abs(self.current_bar.open - sma20) <= acceptable_sma20_price_distance and
                 self.current_bar.volume >= acceptable_volume and
                 self.bar_context['ticks_to_lose'] <= 0.5 and
                 abs(self.bar_context['delta_20_200']) <= acceptable_sma20_sm200_distance)
@@ -101,8 +117,3 @@ class AquilesBot(IB):
             "ticks_to_lose": ticks_to_lose,
             "ticks_to_win": ticks_to_win
         }
-
-
-# aquiles = AquilesBot('AMD')
-# aquiles.init_data()
-# aquiles.run()

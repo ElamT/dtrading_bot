@@ -1,34 +1,46 @@
 from aquiles import AquilesBot
 from datetime import date, datetime
-from dateutil.rrule import rrule, DAILY
 from ib_insync import BarData
+import os
 
-
-a = date(2019, 1, 1)
+a = date(2023, 10, 1)
 b = date(2023, 10, 31)
 
 aquiles = AquilesBot('AMD')
+aquiles.bars = []
 
-for dt in rrule(DAILY, dtstart=a, until=b):
-    date = dt.strftime("%Y%m%d")
-    filename = "./data/%s_%s" %(aquiles.stock.symbol, date)
-    try:
-        file = open(filename, "r")
-        lines = file.readlines()
-        for line in lines:
-            data = line.strip().split(',')
-            bar = BarData()
-            # bar.date =  datetime.strptime(data[0], '%Y-%m-%d %H:%M:%S%z')
-            bar.date = data[0]
-            bar.open = data[1]
-            bar.high = data[2]
-            bar.low = data[3]
-            bar.close = data[4]
-            bar.volume = data[5]
-            bar.average = data[6]
-            bar.barCount = data[7]
-            print(bar)
-        file.close
-    except Exception as e:
-        print('File not found %s' %(filename))
-        # raise e
+files = sorted(os.listdir('./data'))
+target = []
+for x in files:
+    file_date = datetime.strptime(x.split('_')[-1], '%Y%m%d').date()
+    if a <= file_date <= b:
+        target.append(x)
+
+for file in target:
+    filename = "./data/%s" %(file)
+    # print('Processing %s' %(filename))
+    file = open(filename, "r")
+    lines = file.readlines()
+
+    for line in lines:
+        data = line.strip().split(',')
+        bar = BarData()
+        # bar.date =  datetime.strptime(data[0], '%Y-%m-%d %H:%M:%S%z')
+        bar.date = data[0]
+        bar.open = float(data[1])
+        bar.high = float(data[2])
+        bar.low = float(data[3])
+        bar.close = float(data[4])
+        bar.volume = float(data[5])
+        bar.average = float(data[6])
+        bar.barCount = float(data[7])
+        aquiles.bars.append(bar)
+
+    file.close
+
+aquiles.run_backtesting()
+print("Loses: " + str(aquiles.amount_lose))
+print("Profits: " + str(aquiles.amount_win))
+print('NET: '+ str(aquiles.amount_win - aquiles.amount_lose))
+print("Loses Count: " + str(aquiles.loses))
+print("Profits Count: " + str(aquiles.wins))
