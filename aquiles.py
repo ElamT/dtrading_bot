@@ -31,27 +31,28 @@ class AquilesBot(IB):
         raise Exception('Index is less than len of bars')
 
   def process_bar(self):
+    if self.active_order != None:
+        self.analyze_active_order()
+
     if (self.current_bar_index >= 195 and
         self.active_order == None and
         self.meet_conditions()):
         self.active_order = self.bar_context
 
-    elif self.active_order != None:
-        self.analyze_active_order()
 
   def meet_conditions(self):
     acceptable_sma20_price_distance = 0.35
     acceptable_sma20_sm200_distance = 0.35
-    acceptable_delta = 0.30
+    acceptable_delta = 0.30 / 100
     acceptable_volume = 200000
 
     sma20 = self.bar_context['sma20']
     sma200 = self.bar_context['sma200']
 
-    return (abs(self.bar_context['delta']) >= acceptable_delta and
+    return (abs(self.bar_context['delta'] / self.current_bar.open) >= acceptable_delta and
             abs(self.current_bar.open - sma20) <= acceptable_sma20_price_distance and
             self.current_bar.volume >= acceptable_volume and
-            self.bar_context['ticks_to_lose'] <= 0.5 and
+            self.bar_context['ticks_to_lose'] / self.bar_context['ticks_to_win'] <= 0.5 and
             abs(self.bar_context['delta_20_200']) <= acceptable_sma20_sm200_distance)
 
   def build_bar_context(self):
@@ -60,12 +61,16 @@ class AquilesBot(IB):
     sma200 = self.calculate_sma(periods=195)
     delta = round(bar.close - bar.open, 2)
     delta_20_200 = round(sma20 - sma200, 2)
-
+    delta_win = (1.1 / 100.0) * bar.open
+    delta_lose = delta_win / 2
     order_type = 'SELL' if delta < 0 else 'BUY'
-    stop_lose = bar.high if delta < 0 else bar.low
-    take_profit = bar.close - 1.1 if delta < 0 else bar.close + 1.1
+    # stop_lose = bar.high if delta < 0 else bar.low
+    stop_lose = bar.close + delta_lose if delta < 0 else bar.close - delta_lose
+    take_profit = bar.close - delta_win if delta < 0 else bar.close + delta_win
     ticks_to_lose = round(abs(bar.close - stop_lose), 2)
     ticks_to_win = round(abs(bar.close - take_profit), 2)
+
+    shares = 30000 / bar.open * 3
 
     return {
         "sma20": sma20,
@@ -73,7 +78,7 @@ class AquilesBot(IB):
         "delta": delta,
         "delta_20_200": delta_20_200,
         "order_type": order_type,
-        "shares": 900,
+        "shares": shares,
         'date': str(bar.date),
         "price": bar.close,
         "stop_lose": stop_lose,
