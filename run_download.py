@@ -1,22 +1,24 @@
 from aquiles import AquilesBot
 from datetime import date
 from dateutil.rrule import rrule, DAILY
+from ib_insync import *
 
 a = date(2019, 1, 1)
 b = date(2023, 10, 31)
 
 
 aquiles = AquilesBot('AMD')
-aquiles.connect('127.0.0.1', 4002, clientId=1)
+aquiles.connect()
+ib = aquiles.ib
 
 for dt in rrule(DAILY, dtstart=a, until=b):
     date = dt.strftime("%Y%m%d")
     datetime = dt.strftime("%Y%m%d 16:00:00")
 
-    schedule = aquiles.reqHistoricalSchedule(aquiles.stock, 1, datetime)
+    schedule = ib.reqHistoricalSchedule(aquiles.stock, 1, datetime)
     session = schedule.sessions[0]
     if session.refDate == date:
-      bars = aquiles.reqHistoricalData(
+      bars = ib.reqHistoricalData(
           aquiles.stock,
           endDateTime=datetime,
           durationStr='1 D',

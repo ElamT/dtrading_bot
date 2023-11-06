@@ -4,8 +4,8 @@ class AquilesLive(AquilesBot):
   """docstring for AquilesLive"""
   def __init__(self, stock):
     super(AquilesLive, self).__init__(stock)
-    self.connect('127.0.0.1', 4002, clientId=1)
-    self.bars = self.reqHistoricalData(
+    self.connect()
+    self.bars = self.ib.reqHistoricalData(
           self.stock,
           endDateTime='',
           durationStr='2 D',
@@ -23,11 +23,12 @@ class AquilesLive(AquilesBot):
         self.current_bar = bars[-2]
         self.current_bar_index = self.bars.index(self.current_bar)
         self.bar_context = self.build_bar_context()
+        self.trigger_order()
         print(self.bar_context)
         # self.process_bar()
 
-  def trigger_order():
-    orders = self.bracketOrder(
+  def trigger_order(self):
+    orders = self.ib.bracketOrder(
       self.bar_context['order_type'],
       self.bar_context['shares'],
       self.bar_context['price'],
@@ -35,4 +36,4 @@ class AquilesLive(AquilesBot):
       self.bar_context['stop_lose']
     )
     for order in orders:
-        self.placeOrder(self.stock, order)
+        self.ib.placeOrder(self.stock, order)

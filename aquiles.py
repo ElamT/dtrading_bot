@@ -1,11 +1,16 @@
 from ib_insync import *
 
-class AquilesBot(IB):
+class AquilesBot():
   """docstring for AquilesBot"""
   def __init__(self, stock):
     super(AquilesBot, self).__init__()
     self.stock = Stock(stock, 'SMART', 'USD')
     self.active_order = None
+
+  def connect(self):
+    self.ib = IB()
+    self.ib.connect('127.0.0.1', 4002, clientId=1)
+    print('Connected %s' %(self.ib))
 
   def set_currents(self, index=-2):
     self.current_bar = self.bars[index]
@@ -70,7 +75,7 @@ class AquilesBot(IB):
     ticks_to_lose = round(abs(bar.close - stop_lose), 2)
     ticks_to_win = round(abs(bar.close - take_profit), 2)
 
-    shares = 30000 / bar.open * 3
+    shares = round(30000 / bar.open * 3)
 
     return {
         "sma20": sma20,
@@ -81,8 +86,8 @@ class AquilesBot(IB):
         "shares": shares,
         'date': str(bar.date),
         "price": bar.close,
-        "stop_lose": stop_lose,
-        "take_profit": take_profit,
+        "stop_lose": round(stop_lose, 2),
+        "take_profit": round(take_profit, 2),
         "ticks_to_lose": ticks_to_lose,
         "ticks_to_win": ticks_to_win,
         "volume": bar.volume
