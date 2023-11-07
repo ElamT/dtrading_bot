@@ -75,7 +75,7 @@ class AquilesBot():
     ticks_to_lose = round(abs(bar.close - stop_lose), 2)
     ticks_to_win = round(abs(bar.close - take_profit), 2)
 
-    shares = round(30000 / bar.open * 3)
+    shares = round(30000 / bar.open * 2)
 
     return {
         "sma20": sma20,

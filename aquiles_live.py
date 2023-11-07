@@ -23,9 +23,11 @@ class AquilesLive(AquilesBot):
         self.current_bar = bars[-2]
         self.current_bar_index = self.bars.index(self.current_bar)
         self.bar_context = self.build_bar_context()
-        self.trigger_order()
+        self.bar_context['MEED_CONDS'] = self.meet_conditions()
+
         print(self.bar_context)
-        # self.process_bar()
+        if (self.current_bar_index >= 195 and self.bar_context['MEED_CONDS']):
+          self.trigger_order()
 
   def trigger_order(self):
     orders = self.ib.bracketOrder(
