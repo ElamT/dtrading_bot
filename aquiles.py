@@ -1,4 +1,5 @@
 from ib_insync import *
+from datetime import datetime
 
 class AquilesBot():
   """docstring for AquilesBot"""
@@ -46,19 +47,38 @@ class AquilesBot():
 
 
   def meet_conditions(self):
-    acceptable_sma20_price_distance = 0.35
-    acceptable_sma20_sm200_distance = 0.35
-    acceptable_delta = 0.30 / 100
-    acceptable_volume = 200000
+    return (self.time_condition() and
+            self.increment_condition() and
+            self.volume_condition() and
+            self.risk_ratio_condition() and
+            self.sma_conditions())
 
+  def time_condition(self):
+    current_time = datetime.strptime(self.bar_context['date'], '%Y-%m-%d %H:%M:%S%z')
+    accepatable_time = current_time.replace(hour=15, minute=30, second=0, microsecond=0)
+    return current_time <= accepatable_time
+
+  def increment_condition(self):
+    acceptable_delta = 0.30 / 100
+    return abs(self.bar_context['delta'] / self.current_bar.open) >= acceptable_delta
+
+  def volume_condition(self):
+    acceptable_volume = 200000
+    return self.current_bar.volume >= acceptable_volume
+
+  def risk_ratio_condition(self):
+    return self.bar_context['ticks_to_lose'] / self.bar_context['ticks_to_win'] <= 0.5
+
+  def sma_conditions(self):
+    order_type = self.bar_context['order_type']
     sma20 = self.bar_context['sma20']
     sma200 = self.bar_context['sma200']
+    current_price = self.bar_context['price']
 
-    return (abs(self.bar_context['delta'] / self.current_bar.open) >= acceptable_delta and
-            abs(self.current_bar.open - sma20) <= acceptable_sma20_price_distance and
-            self.current_bar.volume >= acceptable_volume and
-            self.bar_context['ticks_to_lose'] / self.bar_context['ticks_to_win'] <= 0.5 and
-            abs(self.bar_context['delta_20_200']) <= acceptable_sma20_sm200_distance)
+    if order_type == 'BUY':
+      return current_price >= sma20
+    else:
+      return current_price <= sma20
 
   def build_bar_context(self):
     bar = self.current_bar
