@@ -9,7 +9,7 @@ class AquilesLive(AquilesBot):
     self.bars = self.ib.reqHistoricalData(
           self.stock,
           endDateTime='',
-          durationStr='2 D',
+          durationStr='3 D',
           barSizeSetting='2 mins',
           whatToShow='TRADES',
           useRTH=True,
