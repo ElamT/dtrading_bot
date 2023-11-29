@@ -4,7 +4,7 @@ from dateutil.rrule import rrule, DAILY
 from ib_insync import *
 
 a = date(2019, 1, 1)
-b = date(2023, 10, 31)
+b = date(2023, 11, 28)
 
 
 aquiles = AquilesBot('AMD')
@@ -28,7 +28,7 @@ for dt in rrule(DAILY, dtstart=a, until=b):
           timeout=0,
           keepUpToDate=False
       )
-      file = open("./data/%s_%s" %(aquiles.stock.symbol, date), "w")
+      file = open("./data/%s_%s" %(aquiles.stock.symbol, dt.strftime("%Y-%m-%d")), "w")
       for bar in bars:
         # print(bar)
         file.write(
