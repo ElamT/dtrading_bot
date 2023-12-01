@@ -16,8 +16,7 @@ class AquilesLive(AquilesBot):
           timeout=0,
           keepUpToDate=True
       )
-    self.bars.updateEvent += self.on_bar_update
-    self.set_currents()
+    self.bars.updateEvent += self.process_bar
 
   def realized_pnl(self):
     pnl = None
@@ -28,37 +27,12 @@ class AquilesLive(AquilesBot):
         break
     return float(pnl.value)
 
-  def max_daily_lose(self):
-    # Maximun stop lose by day 300USD approx 1%
-    return -300
-
-  def acceptable_datetime(self):
-    return True
+  def active_portfolio(self):
+    return self.ib.portfolio()
 
   def close_all(self):
     pass
     # open_orders = self.ib.reqAllOpenOrders()
-
-  def on_bar_update(self, bars, has_new_bar):
-    if has_new_bar:
-        self.current_bar = bars[-2]
-        self.current_bar_index = self.bars.index(self.current_bar)
-        self.bar_context = self.build_bar_context()
-
-        if not self.acceptable_datetime():
-          self.close_all()
-        else:
-          portfolio = self.ib.portfolio()
-          self.bar_context['trade_conditions'] = self.meet_conditions()
-          self.bar_context['portfolio_conditions'] = len(portfolio) == 0
-          self.bar_context['daily_pnl_conditions'] = self.realized_pnl() > self.max_daily_lose()
-
-          print(self.bar_context)
-          if (self.current_bar_index >= 195 and
-              self.bar_context['trade_conditions'] and
-              self.bar_context['portfolio_conditions'] and
-              self.bar_context['daily_pnl_conditions']):
-            self.trigger_order()
 
   def trigger_order(self):
     orders = self.ib.bracketOrder(

@@ -17,48 +17,63 @@ class AquilesBacktest(AquilesBot):
     self.bars = []
     self.load_data()
 
-  def load_data(self):
-    target = glob.glob('./data/AMD_%s' %(self.day))
-    if len(target) > 0:
-      previous = datetime.strptime(self.day, '%Y-%m-%d') - timedelta(1)
-      while len(target) < 2:
-        target += glob.glob('./data/AMD_%s' %(datetime.strftime(previous, '%Y-%m-%d')))
-        previous = previous - timedelta(1)
+  def realized_pnl(self):
+    return self.amount_lose * -1
 
-      for filename in sorted(target):
-          file = open(filename, "r")
-          lines = file.readlines()
+  def trigger_order(self):
+    self.active_order = self.bar_context
 
-          for line in lines:
-              data = line.strip().split(',')
-              bar = BarData()
-              # bar.date =  datetime.strptime(data[0], '%Y-%m-%d %H:%M:%S%z')
-              bar.date = data[0]
-              bar.open = float(data[1])
-              bar.high = float(data[2])
-              bar.low = float(data[3])
-              bar.close = float(data[4])
-              bar.volume = float(data[5])
-              bar.average = float(data[6])
-              bar.barCount = float(data[7])
-              self.bars.append(bar)
-
-          file.close
+  def active_portfolio(self):
+    if self.active_order != None:
+      return [self.active_order]
     else:
-      raise "File Not Found"
+      return []
+
+  def close_all(self):
+    pass
+
+  def load_data(self):
+    previous_day = datetime.strptime(self.day, '%Y-%m-%d') - timedelta(1)
+    target = []
+
+    while len(target) < 1:
+      target = glob.glob('./data/AMD_%s' %(datetime.strftime(previous_day, '%Y-%m-%d')))
+      previous_day = previous_day - timedelta(1)
+
+    file = open(target[0], "r")
+    lines = file.readlines()
+
+    for line in lines:
+      bar = self.line_to_bar(line)
+      self.bars.append(bar)
+
+    file.close
+
+  def line_to_bar(self, line):
+    data = line.strip().split(',')
+    bar = BarData()
+    bar.date = data[0]
+    bar.open = float(data[1])
+    bar.high = float(data[2])
+    bar.low = float(data[3])
+    bar.close = float(data[4])
+    bar.volume = float(data[5])
+    bar.average = float(data[6])
+    bar.barCount = float(data[7])
+    return bar
 
   def run_backtesting(self):
-    index = 195
-    for bar in self.bars[index:]:
-      self.set_currents(index=index)
-      self.process_bar()
-      index += 1
-    print("======== %s =======" %(self.day))
-    print("AMOUNT LOSE: %s" %(self.amount_lose))
-    print("AMOUNT WIN: %s" %(self.amount_win))
-    print("NET: %s" %(self.amount_win - self.amount_lose))
-    print("COUNT LOSE: %s" %(self.loses))
-    print("COUNT WIN: %s" %(self.wins))
+    target = glob.glob('./data/AMD_%s' %(self.day))
+
+    if len(target) > 0:
+      filename = target[0]
+      file = open(filename, "r")
+      lines = file.readlines()
+
+      for line in lines:
+        bar = self.line_to_bar(line)
+        self.bars.append(bar)
+        self.process_bar(self.bars, True, backtesting=True)
 
   def analyze_active_order(self):
       if self.active_order['order_type'] == 'SELL':
@@ -69,7 +84,6 @@ class AquilesBacktest(AquilesBot):
               self.total_shares += self.active_order['shares'] * 2
               self.active_order['status'] = 'LOSE'
               self.active_order['net'] = net * -1
-              self.active_order['net_acum'] = round(self.amount_win - self.amount_lose, 2)
               self.active_order = None
 
           elif self.current_bar.low <= self.active_order['take_profit']:
@@ -79,7 +93,6 @@ class AquilesBacktest(AquilesBot):
               self.total_shares += self.active_order['shares'] * 2
               self.active_order['status'] = 'WIN'
               self.active_order['net'] = net
-              self.active_order['net_acum'] = round(self.amount_win - self.amount_lose, 2)
               self.active_order = None
       else:
           if self.current_bar.low <= self.active_order['stop_lose']:
@@ -89,7 +102,6 @@ class AquilesBacktest(AquilesBot):
               self.total_shares += self.active_order['shares'] * 2
               self.active_order['status'] = 'LOSE'
               self.active_order['net'] = net * -1
-              self.active_order['net_acum'] = round(self.amount_win - self.amount_lose, 2)
               self.active_order = None
 
           elif self.current_bar.high >= self.active_order['take_profit']:
@@ -99,7 +111,6 @@ class AquilesBacktest(AquilesBot):
               self.total_shares += self.active_order['shares'] * 2
               self.active_order['status'] = 'WIN'
               self.active_order['net'] = net
-              self.active_order['net_acum'] = round(self.amount_win - self.amount_lose, 2)
               self.active_order = None
 
 
@@ -115,7 +126,6 @@ class AquilesBacktest(AquilesBot):
             self.total_shares += self.active_order['shares'] * 2
             self.active_order['status'] = 'WIN'
             self.active_order['net'] = net
-            self.active_order['net_acum'] = round(self.amount_win - self.amount_lose, 2)
             self.active_order = None
           elif self.active_order['order_type'] == 'BUY':
             delta = self.active_order['price'] - current_price
@@ -125,7 +135,6 @@ class AquilesBacktest(AquilesBot):
             self.total_shares += self.active_order['shares'] * 2
             self.active_order['status'] = 'LOSE'
             self.active_order['net'] = net * -1
-            self.active_order['net_acum'] = round(self.amount_win - self.amount_lose, 2)
             self.active_order = None
           elif self.active_order['order_type'] == 'SELL' and current_price <= self.active_order['price']:
             delta = self.active_order['price'] - current_price
@@ -135,7 +144,6 @@ class AquilesBacktest(AquilesBot):
             self.total_shares += self.active_order['shares'] * 2
             self.active_order['status'] = 'WIN'
             self.active_order['net'] = net
-            self.active_order['net_acum'] = round(self.amount_win - self.amount_lose, 2)
             self.active_order = None
           elif self.active_order['order_type'] == 'SELL':
             delta = current_price - self.active_order['price']
@@ -145,5 +153,4 @@ class AquilesBacktest(AquilesBot):
             self.total_shares += self.active_order['shares'] * 2
             self.active_order['status'] = 'LOSE'
             self.active_order['net'] = net * -1
-            self.active_order['net_acum'] = round(self.amount_win - self.amount_lose, 2)
             self.active_order = None
