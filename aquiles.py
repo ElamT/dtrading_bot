@@ -42,7 +42,8 @@ class AquilesBot():
 
     if (self.current_bar_index >= 195 and
         self.active_order == None and
-        self.meet_conditions()):
+        self.meet_conditions() and
+        self.amount_lose <= 300):
         self.active_order = self.bar_context
 
 
