@@ -11,7 +11,7 @@ class AquilesBot():
 
   def connect(self):
     self.ib = IB()
-    self.ib.connect('127.0.0.1', 4002, clientId=1)
+    self.ib.connect('127.0.0.1', 4001, clientId=1)
     print('Connected %s' %(self.ib))
 
   def calculate_sma(self, periods=''):
@@ -31,11 +31,11 @@ class AquilesBot():
     return current_time <= accepatable_time
 
   def increment_condition(self):
-    acceptable_delta = 0.30 / 100
+    acceptable_delta = 0.40 / 100
     return abs(self.bar_context['delta'] / self.current_bar.open) >= acceptable_delta
 
   def volume_condition(self):
-    acceptable_volume = 200000
+    acceptable_volume = 150000 # or 200k is the same efect
     return self.current_bar.volume >= acceptable_volume
 
   def risk_ratio_condition(self):
@@ -59,8 +59,7 @@ class AquilesBot():
     return from_time <= time <= until_time
 
   def meet_conditions(self):
-    return (self.time_condition() and
-            self.increment_condition() and
+    return (self.increment_condition() and
             self.volume_condition() and
             self.risk_ratio_condition() and
             self.sma_conditions())
@@ -81,8 +80,7 @@ class AquilesBot():
           self.bar_context['daily_pnl_conditions'] = self.realized_pnl() > self.max_daily_lose
 
           print(self.bar_context)
-          if (self.current_bar_index >= 195 and
-              self.bar_context['trade_conditions'] and
+          if (self.bar_context['trade_conditions'] and
               self.bar_context['portfolio_conditions'] and
               self.bar_context['daily_pnl_conditions']):
 
